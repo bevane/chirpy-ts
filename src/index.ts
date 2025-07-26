@@ -7,6 +7,7 @@ import {
   handlerReadiness,
   handlerMetrics,
   handlerReset,
+  handlerValidateChirp,
 } from "./api/handlers.js";
 
 const app = express();
@@ -22,3 +23,4 @@ app.listen(PORT, () => {
 app.get("/api/healthz", handlerReadiness);
 app.get("/admin/metrics", handlerMetrics);
 app.post("/admin/reset", handlerReset);
+app.post("/api/validate_chirp", handlerValidateChirp);
