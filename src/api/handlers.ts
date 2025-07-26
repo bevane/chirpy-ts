@@ -31,5 +31,10 @@ export const handlerValidateChirp = (req: Request, res: Response) => {
     res.status(400).send(JSON.stringify({ error: "Chirp is too long" }));
     return;
   }
-  res.status(200).send(JSON.stringify({ valid: true }));
+  const words = params.body.split(" ");
+  const profanityList = ["kerfuffle", "sharbert", "fornax"];
+  const cleanedChirp = words
+    .map((word) => (profanityList.includes(word.toLowerCase()) ? "****" : word))
+    .join(" ");
+  res.status(200).send(JSON.stringify({ cleanedBody: cleanedChirp }));
 };
