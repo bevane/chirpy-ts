@@ -23,22 +23,13 @@ export const handlerReset = (req: Request, res: Response) => {
 };
 
 export const handlerValidateChirp = (req: Request, res: Response) => {
-  let body = "";
-
-  req.on("data", (chunk) => {
-    body += chunk;
-  });
-
-  req.on("end", () => {
-    try {
-      const parsedBody: { body: string } = JSON.parse(body);
-      if (parsedBody.body.length > 140) {
-        res.status(400).send(JSON.stringify({ error: "Chirp is too long" }));
-        return;
-      }
-      res.status(200).send(JSON.stringify({ valid: true }));
-    } catch (error) {
-      res.status(500).send(JSON.stringify({ error: "Something went wrong" }));
-    }
-  });
+  type parameters = {
+    body: string;
+  };
+  const params: parameters = req.body;
+  if (params.body.length > 140) {
+    res.status(400).send(JSON.stringify({ error: "Chirp is too long" }));
+    return;
+  }
+  res.status(200).send(JSON.stringify({ valid: true }));
 };
