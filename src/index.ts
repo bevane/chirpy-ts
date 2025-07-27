@@ -8,6 +8,7 @@ import {
   handlerMetrics,
   handlerReset,
   handlerValidateChirp,
+  errorHandler,
 } from "./api/handlers.js";
 
 const app = express();
@@ -25,3 +26,5 @@ app.get("/api/healthz", handlerReadiness);
 app.get("/admin/metrics", handlerMetrics);
 app.post("/admin/reset", handlerReset);
 app.post("/api/validate_chirp", handlerValidateChirp);
+
+app.use(errorHandler);

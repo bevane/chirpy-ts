@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { config } from "../config.js";
 
 export const handlerReadiness = (req: Request, res: Response) => {
@@ -28,8 +28,7 @@ export const handlerValidateChirp = (req: Request, res: Response) => {
   };
   const params: parameters = req.body;
   if (params.body.length > 140) {
-    res.status(400).send(JSON.stringify({ error: "Chirp is too long" }));
-    return;
+    throw new Error("Chirp too long");
   }
   const words = params.body.split(" ");
   const profanityList = ["kerfuffle", "sharbert", "fornax"];
@@ -37,4 +36,14 @@ export const handlerValidateChirp = (req: Request, res: Response) => {
     .map((word) => (profanityList.includes(word.toLowerCase()) ? "****" : word))
     .join(" ");
   res.status(200).send(JSON.stringify({ cleanedBody: cleanedChirp }));
+};
+
+export const errorHandler = (
+  err: Error,
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  res.status(500).json({ error: "Something went wrong on our end" });
+  next();
 };
