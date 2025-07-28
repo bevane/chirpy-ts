@@ -1,5 +1,11 @@
 import { NextFunction, Request, Response } from "express";
 import { config } from "../config.js";
+import {
+  BadRequestError,
+  ForbiddenError,
+  NotfoundError,
+  UnauthorizedError,
+} from "./errors.js";
 
 export const handlerReadiness = (req: Request, res: Response) => {
   res.set("Content-Type", "text/plain; charset=utf-8");
@@ -28,7 +34,11 @@ export const handlerValidateChirp = (req: Request, res: Response) => {
   };
   const params: parameters = req.body;
   if (params.body.length > 140) {
-    throw new Error("Chirp too long");
+    throw new BadRequestError(
+      JSON.stringify({
+        error: "Chirp is too long. Max length is 140",
+      }),
+    );
   }
   const words = params.body.split(" ");
   const profanityList = ["kerfuffle", "sharbert", "fornax"];
@@ -44,6 +54,15 @@ export const errorHandler = (
   res: Response,
   next: NextFunction,
 ) => {
-  res.status(500).json({ error: "Something went wrong on our end" });
-  next();
+  if (err instanceof BadRequestError) {
+    res.status(400).send(err.message);
+  } else if (err instanceof UnauthorizedError) {
+    res.status(401).send("Unauthorized");
+  } else if (err instanceof ForbiddenError) {
+    res.status(403).send("Forbidden");
+  } else if (err instanceof NotfoundError) {
+    res.status(404).send("Not Found");
+  } else {
+    res.status(500).send("Internal Server Error");
+  }
 };
