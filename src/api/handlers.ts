@@ -6,6 +6,27 @@ import {
   NotfoundError,
   UnauthorizedError,
 } from "./errors.js";
+import { createUser, deleteAllUsers } from "../db/queries/users.js";
+
+export const handlerCreateUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    type parameters = {
+      email: string;
+    };
+
+    const params: parameters = req.body;
+    const insertEmail = params.email;
+
+    const createdUser = await createUser({ email: insertEmail });
+    res.status(201).send(JSON.stringify(createdUser));
+  } catch (err) {
+    next(err);
+  }
+};
 
 export const handlerReadiness = (req: Request, res: Response) => {
   res.set("Content-Type", "text/plain; charset=utf-8");
@@ -22,10 +43,19 @@ export const handlerMetrics = (req: Request, res: Response) => {
 </html>`);
 };
 
-export const handlerReset = (req: Request, res: Response) => {
-  config.fileserverHits = 0;
-  res.set("Content-Type", "text/plain; charset=utf-8");
-  res.send("OK");
+export const handlerReset = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    config.fileserverHits = 0;
+    await deleteAllUsers();
+    res.set("Content-Type", "text/plain; charset=utf-8");
+    res.send("OK");
+  } catch (err) {
+    next(err);
+  }
 };
 
 export const handlerValidateChirp = (req: Request, res: Response) => {
