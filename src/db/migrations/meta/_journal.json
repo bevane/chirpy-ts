@@ -8,6 +8,13 @@
       "when": 1753746148032,
       "tag": "0000_fat_virginia_dare",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1757225692502,
+      "tag": "0001_misty_hercules",
+      "breakpoints": true
     }
   ]
 }
