@@ -7,6 +7,7 @@ import {
   UnauthorizedError,
 } from "./errors.js";
 import { createUser, deleteAllUsers } from "../db/queries/users.js";
+import { createChirp } from "../db/queries/chirps.js";
 
 export const handlerCreateUser = async (
   req: Request,
@@ -23,6 +24,10 @@ export const handlerCreateUser = async (
 
     const createdUser = await createUser({ email: insertEmail });
     res.status(201).send(JSON.stringify(createdUser));
+    // In Express 4, unhandled async errors don’t automatically go to the
+    // error handler. You can work around this by using try/catch in async
+    // route handlers
+    // This app uses express 5, this is just an example
   } catch (err) {
     next(err);
   }
@@ -58,9 +63,10 @@ export const handlerReset = async (
   }
 };
 
-export const handlerValidateChirp = (req: Request, res: Response) => {
+export const handlerCreateChirp = async (req: Request, res: Response) => {
   type parameters = {
     body: string;
+    userId: string;
   };
   const params: parameters = req.body;
   if (params.body.length > 140) {
@@ -75,7 +81,11 @@ export const handlerValidateChirp = (req: Request, res: Response) => {
   const cleanedChirp = words
     .map((word) => (profanityList.includes(word.toLowerCase()) ? "****" : word))
     .join(" ");
-  res.status(200).send(JSON.stringify({ cleanedBody: cleanedChirp }));
+  const createdChirp = await createChirp({
+    body: cleanedChirp,
+    userId: params.userId,
+  });
+  res.status(201).send(JSON.stringify(createdChirp));
 };
 
 export const errorHandler = (

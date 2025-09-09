@@ -7,7 +7,7 @@ import {
   handlerReadiness,
   handlerMetrics,
   handlerReset,
-  handlerValidateChirp,
+  handlerCreateChirp,
   errorHandler,
   handlerCreateUser,
 } from "./api/handlers.js";
@@ -33,7 +33,7 @@ app.listen(PORT, () => {
 app.get("/api/healthz", handlerReadiness);
 app.get("/admin/metrics", handlerMetrics);
 app.post("/admin/reset", handlerReset);
-app.post("/api/validate_chirp", handlerValidateChirp);
+app.post("/api/chirps", handlerCreateChirp);
 app.post("/api/users", handlerCreateUser);
 
 app.use(errorHandler);
