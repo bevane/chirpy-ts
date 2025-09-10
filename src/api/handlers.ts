@@ -7,7 +7,7 @@ import {
   UnauthorizedError,
 } from "./errors.js";
 import { createUser, deleteAllUsers } from "../db/queries/users.js";
-import { createChirp } from "../db/queries/chirps.js";
+import { createChirp, getChirps } from "../db/queries/chirps.js";
 
 export const handlerCreateUser = async (
   req: Request,
@@ -86,6 +86,11 @@ export const handlerCreateChirp = async (req: Request, res: Response) => {
     userId: params.userId,
   });
   res.status(201).send(JSON.stringify(createdChirp));
+};
+
+export const handlerGetChirps = async (req: Request, res: Response) => {
+  const chirps = await getChirps();
+  res.status(200).send(JSON.stringify(chirps));
 };
 
 export const errorHandler = (
