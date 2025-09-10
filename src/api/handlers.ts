@@ -7,7 +7,7 @@ import {
   UnauthorizedError,
 } from "./errors.js";
 import { createUser, deleteAllUsers } from "../db/queries/users.js";
-import { createChirp, getChirps } from "../db/queries/chirps.js";
+import { createChirp, getChirpById, getChirps } from "../db/queries/chirps.js";
 
 export const handlerCreateUser = async (
   req: Request,
@@ -91,6 +91,16 @@ export const handlerCreateChirp = async (req: Request, res: Response) => {
 export const handlerGetChirps = async (req: Request, res: Response) => {
   const chirps = await getChirps();
   res.status(200).send(JSON.stringify(chirps));
+};
+
+export const handlerGetChirp = async (req: Request, res: Response) => {
+  const id: string = req.params.chirpID;
+  const chirp = await getChirpById(id);
+  if (chirp) {
+    res.status(200).send(JSON.stringify(chirp));
+  } else {
+    throw new NotfoundError(`Chirp with chirpId: ${id} not found`);
+  }
 };
 
 export const errorHandler = (
