@@ -8,6 +8,7 @@ import {
 } from "./errors.js";
 import { createUser, deleteAllUsers } from "../db/queries/users.js";
 import { createChirp, getChirpById, getChirps } from "../db/queries/chirps.js";
+import { hashPassword } from "../utils/auth.js";
 
 export const handlerCreateUser = async (
   req: Request,
@@ -17,13 +18,21 @@ export const handlerCreateUser = async (
   try {
     type parameters = {
       email: string;
+      password: string;
     };
 
     const params: parameters = req.body;
     const insertEmail = params.email;
+    const password = params.password;
 
-    const createdUser = await createUser({ email: insertEmail });
-    res.status(201).send(JSON.stringify(createdUser));
+    const hashedPassword = await hashPassword(password);
+
+    const createdUser = await createUser({
+      email: insertEmail,
+      hashed_password: hashedPassword,
+    });
+    const { hashed_password, ...userResponse } = createdUser;
+    res.status(201).send(JSON.stringify(userResponse));
     // In Express 4, unhandled async errors don’t automatically go to the
     // error handler. You can work around this by using try/catch in async
     // route handlers
