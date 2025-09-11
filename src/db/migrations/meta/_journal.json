@@ -15,6 +15,13 @@
       "when": 1757225692502,
       "tag": "0001_misty_hercules",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1757567683782,
+      "tag": "0002_confused_shooting_star",
+      "breakpoints": true
     }
   ]
 }
