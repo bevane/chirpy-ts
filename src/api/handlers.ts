@@ -6,9 +6,42 @@ import {
   NotfoundError,
   UnauthorizedError,
 } from "./errors.js";
-import { createUser, deleteAllUsers } from "../db/queries/users.js";
+import {
+  createUser,
+  deleteAllUsers,
+  getUserByEmail,
+} from "../db/queries/users.js";
 import { createChirp, getChirpById, getChirps } from "../db/queries/chirps.js";
-import { hashPassword } from "../utils/auth.js";
+import { checkPasswordHash, hashPassword } from "../utils/auth.js";
+
+export const handlerLogin = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  type parameters = {
+    email: string;
+    password: string;
+  };
+  const params: parameters = req.body;
+
+  try {
+    const user = await getUserByEmail(params.email);
+    const isMatch = await checkPasswordHash(
+      params.password,
+      user.hashed_password,
+    );
+    if (!isMatch) {
+      throw new Error("Password does not match hashed password");
+    }
+
+    const { hashed_password, ...userResponse } = user;
+    res.status(200).send(JSON.stringify(userResponse));
+  } catch (err) {
+    console.error(err);
+    throw new UnauthorizedError("incorrect email or password");
+  }
+};
 
 export const handlerCreateUser = async (
   req: Request,
