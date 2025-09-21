@@ -1,5 +1,7 @@
 import { hash, compare } from "bcrypt";
-import { JwtPayload, sign } from "jsonwebtoken";
+import { JwtPayload, sign, verify } from "jsonwebtoken";
+
+type Payload = Pick<JwtPayload, "iss" | "sub" | "iat" | "exp">;
 
 export async function hashPassword(password: string): Promise<string> {
   const saltRounds = 10;
@@ -18,7 +20,6 @@ export function makeJWT(
   expiresIn: number,
   secret: string,
 ): string {
-  type Payload = Pick<JwtPayload, "iss" | "sub" | "iat" | "exp">;
   const currentTime = Math.floor(Date.now() / 1000);
   const payload: Payload = {
     iss: "chirpy",
@@ -28,4 +29,12 @@ export function makeJWT(
   };
   const token = sign(payload, secret);
   return token;
+}
+
+export function validateJWT(tokenString: string, secret: string): string {
+  const decoded = verify(tokenString, secret);
+  if (typeof decoded.sub != "string") {
+    throw new Error("invalid token");
+  }
+  return decoded.sub;
 }
