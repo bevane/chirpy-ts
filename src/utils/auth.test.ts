@@ -27,3 +27,30 @@ describe("Password Hashing", () => {
     expect(result).toBe(false);
   });
 });
+
+describe("JWT validation", () => {
+  const secret1 = "correctsecret";
+  const secret2 = "anothersecret";
+  let tokenCorrect: string;
+  let tokenExpired: string;
+  let tokenInvalid: string;
+
+  beforeAll(() => {
+    tokenCorrect = makeJWT("bob123", 3600, secret1);
+    tokenExpired = makeJWT("bob123", 0, secret1);
+    tokenInvalid = makeJWT("bob123", 0, secret2);
+  });
+
+  it("should return correct user ID for valid token", async () => {
+    const result = validateJWT(tokenCorrect, secret1);
+    expect(result).toEqual("bob123");
+  });
+
+  it("should throw error for expired token", async () => {
+    expect(() => validateJWT(tokenExpired, secret1)).toThrowError("expired");
+  });
+
+  it("should throw error for token signed with wrong secret", async () => {
+    expect(() => validateJWT(tokenInvalid, secret1)).toThrowError("invalid");
+  });
+});
