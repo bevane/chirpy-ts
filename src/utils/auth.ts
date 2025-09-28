@@ -1,5 +1,7 @@
+import { Request } from "express";
 import { hash, compare } from "bcrypt";
-import { JwtPayload, sign, verify } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
+import type { JwtPayload } from "jsonwebtoken";
 
 type Payload = Pick<JwtPayload, "iss" | "sub" | "iat" | "exp">;
 
@@ -27,14 +29,23 @@ export function makeJWT(
     iat: currentTime,
     exp: currentTime + expiresIn,
   };
-  const token = sign(payload, secret);
+  const token = jwt.sign(payload, secret);
   return token;
 }
 
 export function validateJWT(tokenString: string, secret: string): string {
-  const decoded = verify(tokenString, secret);
+  const decoded = jwt.verify(tokenString, secret);
   if (typeof decoded.sub != "string") {
     throw new Error("invalid token");
   }
   return decoded.sub;
+}
+
+export function getBearerToken(req: Request): string {
+  const authHeader = req.get("Authorization");
+  if (!authHeader) {
+    throw new Error("No authorization header");
+  }
+  const token = authHeader.replace("Bearer ", "");
+  return token;
 }

@@ -12,7 +12,7 @@ import {
   getUserByEmail,
 } from "../db/queries/users.js";
 import { createChirp, getChirpById, getChirps } from "../db/queries/chirps.js";
-import { checkPasswordHash, hashPassword } from "../utils/auth.js";
+import { checkPasswordHash, hashPassword, makeJWT } from "../utils/auth.js";
 
 export const handlerLogin = async (
   req: Request,
@@ -22,8 +22,16 @@ export const handlerLogin = async (
   type parameters = {
     email: string;
     password: string;
+    expiresInSeconds?: number;
   };
   const params: parameters = req.body;
+
+  let expiresInSeconds: number;
+  if (!params.expiresInSeconds || params.expiresInSeconds > 3600) {
+    expiresInSeconds = 3600;
+  } else {
+    expiresInSeconds = params.expiresInSeconds;
+  }
 
   try {
     const user = await getUserByEmail(params.email);
@@ -36,7 +44,8 @@ export const handlerLogin = async (
     }
 
     const { hashed_password, ...userResponse } = user;
-    res.status(200).send(JSON.stringify(userResponse));
+    const token = makeJWT(user.id, expiresInSeconds, config.jwtSecret);
+    res.status(200).send(JSON.stringify({ ...userResponse, token }));
   } catch (err) {
     console.error(err);
     throw new UnauthorizedError("incorrect email or password");
