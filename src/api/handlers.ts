@@ -12,7 +12,13 @@ import {
   getUserByEmail,
 } from "../db/queries/users.js";
 import { createChirp, getChirpById, getChirps } from "../db/queries/chirps.js";
-import { checkPasswordHash, hashPassword, makeJWT } from "../utils/auth.js";
+import {
+  checkPasswordHash,
+  getBearerToken,
+  hashPassword,
+  makeJWT,
+  validateJWT,
+} from "../utils/auth.js";
 
 export const handlerLogin = async (
   req: Request,
@@ -117,8 +123,20 @@ export const handlerReset = async (
 export const handlerCreateChirp = async (req: Request, res: Response) => {
   type parameters = {
     body: string;
-    userId: string;
   };
+  let token: string;
+  let userId: string;
+  try {
+    token = getBearerToken(req);
+    userId = validateJWT(token, config.jwtSecret);
+  } catch (e) {
+    throw new UnauthorizedError(
+      JSON.stringify({
+        error: "You are not authorized",
+      }),
+    );
+  }
+
   const params: parameters = req.body;
   if (params.body.length > 140) {
     throw new BadRequestError(
@@ -134,7 +152,7 @@ export const handlerCreateChirp = async (req: Request, res: Response) => {
     .join(" ");
   const createdChirp = await createChirp({
     body: cleanedChirp,
-    userId: params.userId,
+    userId,
   });
   res.status(201).send(JSON.stringify(createdChirp));
 };
