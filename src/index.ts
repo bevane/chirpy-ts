@@ -13,6 +13,8 @@ import {
   handlerGetChirps,
   handlerGetChirp,
   handlerLogin,
+  handlerRefresh,
+  handlerRevoke,
 } from "./api/handlers.js";
 import postgres from "postgres";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
@@ -41,5 +43,7 @@ app.get("/api/chirps", handlerGetChirps);
 app.get("/api/chirps/:chirpID", handlerGetChirp);
 app.post("/api/users", handlerCreateUser);
 app.post("/api/login", handlerLogin);
+app.post("/api/refresh", handlerRefresh);
+app.post("/api/revoke", handlerRevoke);
 
 app.use(errorHandler);

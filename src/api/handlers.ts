@@ -17,8 +17,67 @@ import {
   getBearerToken,
   hashPassword,
   makeJWT,
+  makeRefreshToken,
   validateJWT,
 } from "../utils/auth.js";
+import { NewRefreshToken, NewUser } from "../db/schema.js";
+import {
+  createRefreshToken,
+  getRefreshTokenByToken,
+  revokeRefreshToken,
+} from "../db/queries/refresh_tokens.js";
+
+export const handlerRefresh = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const tokenHeader = req.get("Authorization");
+  if (!tokenHeader) {
+    throw new UnauthorizedError("No Authorization header");
+  }
+  const refreshToken = tokenHeader.replace("Bearer ", "");
+
+  const fetchedToken = await getRefreshTokenByToken(refreshToken);
+  if (
+    !fetchedToken ||
+    fetchedToken.revokedAt ||
+    fetchedToken.expiresAt <= new Date() ||
+    !fetchedToken.userId
+  ) {
+    throw new UnauthorizedError("Refresh token invalid");
+  }
+
+  const token = makeJWT(fetchedToken.userId, 3600, config.jwtSecret);
+
+  res.status(200).send(JSON.stringify({ token }));
+};
+
+export const handlerRevoke = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const tokenHeader = req.get("Authorization");
+  if (!tokenHeader) {
+    throw new UnauthorizedError("No Authorization header");
+  }
+  const refreshToken = tokenHeader.replace("Bearer ", "");
+
+  const fetchedToken = await getRefreshTokenByToken(refreshToken);
+  if (
+    !fetchedToken ||
+    fetchedToken.revokedAt ||
+    fetchedToken.expiresAt <= new Date() ||
+    !fetchedToken.userId
+  ) {
+    throw new UnauthorizedError("Refresh token invalid");
+  }
+
+  await revokeRefreshToken(refreshToken);
+
+  res.status(204).send();
+};
 
 export const handlerLogin = async (
   req: Request,
@@ -28,19 +87,23 @@ export const handlerLogin = async (
   type parameters = {
     email: string;
     password: string;
-    expiresInSeconds?: number;
   };
   const params: parameters = req.body;
+  const expiresInSeconds = 3600;
 
-  let expiresInSeconds: number;
-  if (!params.expiresInSeconds || params.expiresInSeconds > 3600) {
-    expiresInSeconds = 3600;
-  } else {
-    expiresInSeconds = params.expiresInSeconds;
-  }
+  let user: {
+    id: string;
+    createdAt: Date;
+    updatedAt: Date;
+    email: string;
+    hashed_password: string;
+  };
 
   try {
-    const user = await getUserByEmail(params.email);
+    user = await getUserByEmail(params.email);
+    if (!user.hashed_password) {
+      throw new Error("User does not have hashed password");
+    }
     const isMatch = await checkPasswordHash(
       params.password,
       user.hashed_password,
@@ -48,14 +111,28 @@ export const handlerLogin = async (
     if (!isMatch) {
       throw new Error("Password does not match hashed password");
     }
-
-    const { hashed_password, ...userResponse } = user;
-    const token = makeJWT(user.id, expiresInSeconds, config.jwtSecret);
-    res.status(200).send(JSON.stringify({ ...userResponse, token }));
   } catch (err) {
     console.error(err);
     throw new UnauthorizedError("incorrect email or password");
   }
+
+  const { hashed_password, ...userResponse } = user;
+  const token = makeJWT(user.id, expiresInSeconds, config.jwtSecret);
+  const refreshToken = makeRefreshToken();
+
+  const sixtyDaysinFuture = new Date();
+  sixtyDaysinFuture.setDate(new Date().getDate() + 60);
+  const newRefreshToken: NewRefreshToken = {
+    token: refreshToken,
+    expiresAt: sixtyDaysinFuture,
+    userId: user.id,
+  };
+
+  await createRefreshToken(newRefreshToken);
+
+  res
+    .status(200)
+    .send(JSON.stringify({ ...userResponse, token, refreshToken }));
 };
 
 export const handlerCreateUser = async (
