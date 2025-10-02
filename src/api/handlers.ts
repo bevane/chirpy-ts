@@ -3,6 +3,7 @@ import { config } from "../config.js";
 import {
   BadRequestError,
   ForbiddenError,
+  InternalServerError,
   NotfoundError,
   UnauthorizedError,
 } from "./errors.js";
@@ -10,6 +11,7 @@ import {
   createUser,
   deleteAllUsers,
   getUserByEmail,
+  updateUser,
 } from "../db/queries/users.js";
 import { createChirp, getChirpById, getChirps } from "../db/queries/chirps.js";
 import {
@@ -26,6 +28,48 @@ import {
   getRefreshTokenByToken,
   revokeRefreshToken,
 } from "../db/queries/refresh_tokens.js";
+
+export const handlerUpdateUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  type parameters = {
+    email: string;
+    password: string;
+  };
+  const params: parameters = req.body;
+
+  const tokenHeader = req.get("Authorization");
+  if (!tokenHeader) {
+    throw new UnauthorizedError("No Authorization header");
+  }
+  const token = tokenHeader.replace("Bearer ", "");
+  let userId: string;
+  try {
+    userId = validateJWT(token, config.jwtSecret);
+  } catch (e) {
+    throw new UnauthorizedError("JWT not valid");
+  }
+
+  let updatedUser: {
+    id: string;
+    createdAt: Date;
+    updatedAt: Date;
+    email: string;
+    hashed_password: string;
+  };
+  try {
+    const hashedPassword = await hashPassword(params.password);
+    updatedUser = await updateUser(userId, params.email, hashedPassword);
+  } catch (e) {
+    throw new InternalServerError("unable to update user");
+  }
+
+  const { hashed_password, ...userResponse } = updatedUser;
+
+  res.status(200).send(JSON.stringify({ ...userResponse }));
+};
 
 export const handlerRefresh = async (
   req: Request,
