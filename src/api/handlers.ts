@@ -13,7 +13,12 @@ import {
   getUserByEmail,
   updateUser,
 } from "../db/queries/users.js";
-import { createChirp, getChirpById, getChirps } from "../db/queries/chirps.js";
+import {
+  createChirp,
+  deleteChirpById,
+  getChirpById,
+  getChirps,
+} from "../db/queries/chirps.js";
 import {
   checkPasswordHash,
   getBearerToken,
@@ -28,6 +33,31 @@ import {
   getRefreshTokenByToken,
   revokeRefreshToken,
 } from "../db/queries/refresh_tokens.js";
+
+export const handlerDeleteChirp = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const id = req.params.chirpID;
+  const chirp = await getChirpById(id);
+  if (!chirp) {
+    throw new NotfoundError("chirp not found");
+  }
+  let userId: string;
+  try {
+    const token = getBearerToken(req);
+    userId = validateJWT(token, config.jwtSecret);
+  } catch (e) {
+    throw new UnauthorizedError("Unable to validate token");
+  }
+  if (userId != chirp.userId) {
+    res.status(403).send();
+    return;
+  }
+  await deleteChirpById(id);
+  res.status(204).send();
+};
 
 export const handlerUpdateUser = async (
   req: Request,
