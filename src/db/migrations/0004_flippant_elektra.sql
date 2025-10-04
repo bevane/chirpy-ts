@@ -1,1 +1,0 @@
-ALTER TABLE "chirps" ADD COLUMN "is_chirpy_red" boolean DEFAULT false;

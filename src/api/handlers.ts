@@ -12,6 +12,7 @@ import {
   deleteAllUsers,
   getUserByEmail,
   updateUser,
+  upgradeUser,
 } from "../db/queries/users.js";
 import {
   createChirp,
@@ -21,6 +22,7 @@ import {
 } from "../db/queries/chirps.js";
 import {
   checkPasswordHash,
+  getAPIKey,
   getBearerToken,
   hashPassword,
   makeJWT,
@@ -33,6 +35,40 @@ import {
   getRefreshTokenByToken,
   revokeRefreshToken,
 } from "../db/queries/refresh_tokens.js";
+
+export const handlerWebhook = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  type parameters = {
+    event: string;
+    data: {
+      userId: string;
+    };
+  };
+  try {
+    const key = getAPIKey(req);
+    if (key != config.polkaKey) {
+      res.status(401).send();
+      return;
+    }
+  } catch (e) {
+    res.status(401).send();
+    return;
+  }
+  const bodyParams: parameters = req.body;
+  if (bodyParams.event != "user.upgraded") {
+    res.status(204).send();
+    return;
+  }
+  try {
+    await upgradeUser(bodyParams.data.userId);
+  } catch (e) {
+    throw new NotfoundError("user not found");
+  }
+  res.status(204).send();
+};
 
 export const handlerDeleteChirp = async (
   req: Request,

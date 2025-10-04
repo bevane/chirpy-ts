@@ -2,6 +2,7 @@ import type { MigrationConfig } from "drizzle-orm/migrator";
 process.loadEnvFile();
 
 type APIConfig = {
+  polkaKey: string;
   jwtSecret: string;
   fileserverHits: number;
   db: DBConfig;
@@ -16,6 +17,7 @@ const migrationConfig: MigrationConfig = {
   migrationsFolder: "./src/db/migrations",
 };
 export const config: APIConfig = {
+  polkaKey: envOrThrow("POLKA_KEY"),
   jwtSecret: envOrThrow("JWT_SECRET"),
   fileserverHits: 0,
   db: {

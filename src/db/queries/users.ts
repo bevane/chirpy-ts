@@ -32,3 +32,7 @@ export async function updateUser(
     .returning();
   return result;
 }
+
+export async function upgradeUser(userId: string) {
+  await db.update(users).set({ isChirpyRed: true }).where(eq(users.id, userId));
+}

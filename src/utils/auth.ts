@@ -34,6 +34,15 @@ export function makeJWT(
   return token;
 }
 
+export function getAPIKey(req: Request): string {
+  const authHeader = req.get("Authorization");
+  if (!authHeader) {
+    throw new Error("No authorization header");
+  }
+  const token = authHeader.replace("ApiKey ", "");
+  return token;
+}
+
 export function validateJWT(tokenString: string, secret: string): string {
   const decoded = jwt.verify(tokenString, secret);
   if (typeof decoded.sub != "string") {
